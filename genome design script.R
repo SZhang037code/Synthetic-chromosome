@@ -363,7 +363,7 @@ in_in_L_1<-importbed(intron_cds_intron_gene_ls,'./intron_exon_intron/')
 in_in_L_2<-makedf(in_in_L_1)
 in_in_L_3<- do.call('list',parallel::mclapply(in_in_L_2$pair,function(x){fun(x)},mc.cores = 90))
 
-select_pcrtag<-function(df,ls){
+select_pcrmarker<-function(df,ls){
   df$product<-lengths(ls)
   for(i in 1:nrow(df)){
     if(df$product[i]==1){
@@ -392,7 +392,7 @@ select_pcrtag<-function(df,ls){
     summarize(number=list(num))
   return(df_3)
 }
-in_in_L_4<-select_pcrtag(in_in_L_2,in_in_L_3)
+in_in_L_4<-select_pcrmarker(in_in_L_2,in_in_L_3)
 
 in_in_rest_gene<-setdiff(names(intron_cds_intron_gene_ls),in_in_L_4$gene)
 
@@ -421,13 +421,13 @@ makebed(intron_intron_gene_ls,'./intron_intron/')
 in_L_1<-importbed(intron_intron_gene_ls,'./intron_intron/')
 in_L_2<-makedf(in_L_1)
 in_L_3<- do.call('list',parallel::mclapply(in_L_2$pair,function(x){fun(x)},mc.cores = 5))
-in_L_4<-select_pcrtag(in_L_2,in_L_3)
+in_L_4<-select_pcrmarker(in_L_2,in_L_3)
 in_rest_gene<-setdiff(names(intron_intron_gene_ls),in_L_4$gene)
 in_L_5<-select_pcrtar_from_grangelist(in_L_4,in_L_1)
 
 
 # 2.6 Design PCRmarks and verify them in-silico (in CDS)
-cds_tag<-setdiff(names(cdsByTr_unique_gene_ls),union(genome_gene$gene,gene_in_arm_inin$gene))###设计cds pcrtag的gene
+cds_tag<-setdiff(names(cdsByTr_unique_gene_ls),union(genome_gene$gene,gene_in_arm_inin$gene))###设计cds pcrmarker的gene
 cds_tag<-c(cds_tag,in_rest_gene)
 cds_cds_gene_ls<-include_select(cdsByTr_unique_gene_ls,cds_tag)
 cds_cds_gene_ls<-split(unlist(cds_cds_gene_ls),unlist(cds_cds_gene_ls)$trc)
@@ -576,7 +576,7 @@ cds_L_1<-importbed_exon(cds_cds_gene_ls,'./cds_cds/',
                            scores=11,tm_l=58,tm_h=65)
 cds_L_2<-makedf(cds_L_1)
 cds_L_3<- do.call('list',parallel::mclapply(cds_L_2$pair,function(x){fun(x)},mc.cores = 70))
-cds_L_4<-select_pcrtag(cds_L_2,cds_L_3)
+cds_L_4<-select_pcrmarker(cds_L_2,cds_L_3)
 cds_L_5<-select_pcrtar_from_grangelist(cds_L_4,cds_L_1)
 
 # 2.7 Integrate all PCRmarks and replace sequences
@@ -585,16 +585,16 @@ for(i in 1:length(PCRmarks)){
   PCRmarks$gene[i]<-strsplit(PCRmarks$gene[i],'\\.')[[1]][1]
 }
 PCRmarks<-split(PCRmarks,PCRmarks$gene)
-manage_total_pcrtag<-function(x){
+manage_total_pcrmarker<-function(x){
   x<-unlist(x)
   x$wt_tm<-sapply(x$wt,tm)
   x$sf_tm<-sapply(x$sf,tm)
   x<-split(x,x$gene)
   return(x)
 }# add Tm
-PCRmarks<-manage_total_pcrtag(PCRmarks)
+PCRmarks<-manage_total_pcrmarker(PCRmarks)
 
-manage_total_pcrtag_2<-function(x){
+manage_total_pcrmarker_2<-function(x){
   len<-lengths(x)
   for(i in 1:length(x)){
     if(len[i]>2){
@@ -607,17 +607,17 @@ manage_total_pcrtag_2<-function(x){
   }
   return(x)
 }# randomly select one PCRmark for each gene
-PCRmarks_2<-manage_total_pcrtag_2(PCRmarks)
+PCRmarks_2<-manage_total_pcrmarker_2(PCRmarks)
 PCRmarks_2<-unlist(PCRmarks_2)
 
 SYN_sequence<-fasta_genome
 PCRmarks_2$sf<-as.character(PCRmarks_2$sf)
-pcrtag_swith<-function(pcrtag_range,chromosome_fasta,wid){
-  start_index <- start(pcrtag_range)
-  strand_index <- as.character(strand(pcrtag_range))
-  for(i in seq_len(length(pcrtag_range))){
-    tag<-as.character(DNAString(pcrtag_range[i]$sf))
-    anti_tag<-as.character(reverseComplement(DNAString(pcrtag_range[i]$sf)))
+pcrmarker_swith<-function(pcrmarker_range,chromosome_fasta,wid){
+  start_index <- start(pcrmarker_range)
+  strand_index <- as.character(strand(pcrmarker_range))
+  for(i in seq_len(length(pcrmarker_range))){
+    tag<-as.character(DNAString(pcrmarker_range[i]$sf))
+    anti_tag<-as.character(reverseComplement(DNAString(pcrmarker_range[i]$sf)))
     if(strand_index[i] == '+'){
       subseq(chromosome_fasta, start = start_index[i], width = wid) <-tag
     } 
@@ -627,9 +627,9 @@ pcrtag_swith<-function(pcrtag_range,chromosome_fasta,wid){
   }
   return(chromosome_fasta)
 }
-SYN_sequence<-pcrtag_swith(PCRmarks_2,SYN_sequence,24)
+SYN_sequence<-pcrmarker_swith(PCRmarks_2,SYN_sequence,24)
 
-PCRmarks_2$type<-'pcrtag_pair'
+PCRmarks_2$type<-'pcrmarker_pair'
 PCRmarks_2$wt<-as.character(PCRmarks_2$wt)
 PCRmarks_2$sf<-as.character(PCRmarks_2$sf)
 names(PCRmarks_2)<-as.character(PCRmarks_2$wt)
